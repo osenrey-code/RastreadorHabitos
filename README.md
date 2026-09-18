@@ -1,8 +1,17 @@
 ```mermaid
-graph TD
-    %% Definición del Core
-    subgraph Core ["Core del Sistema (Estándar)"]
+graph LR
+    %% 1. Bloque Izquierdo (Entrada)
+    subgraph Core_Entrada ["Core (Control)"]
         Acceso[Control de Acceso]
+    end
+
+    %% 2. Bloque Central (El tuyo)
+    subgraph Negocio ["Módulo de Negocio"]
+        Habitos((Rastreador de Hábitos))
+    end
+
+    %% 3. Bloque Derecho (Servicios)
+    subgraph Core_Servicios ["Core (Servicios)"]
         Permisos[Gestión de Permisos]
         Auditoria[Auditoría]
         Notificaciones[Notificaciones]
@@ -10,16 +19,12 @@ graph TD
         Documentos[Documentos]
     end
 
-    %% Módulo de Negocio
-    subgraph Negocio ["Módulo de Negocio"]
-        Habitos[Rastreador de Hábitos]
-    end
-
-    %% Relaciones y flechas etiquetadas
+    %% Relaciones y flechas
     Acceso --> |Autentica al usuario| Habitos
+    
     Habitos --> |Verifica autorización| Permisos
     Habitos --> |Registra cambios críticos| Auditoria
     Habitos --> |Alerta de rachas/fallos| Notificaciones
     Habitos --> |Genera estadísticas| Reportes
     Habitos --> |Exporta rutinas| Documentos
-    ```
+```
