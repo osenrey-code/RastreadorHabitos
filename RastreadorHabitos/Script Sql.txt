@@ -1,0 +1,40 @@
+﻿CREATE DATABASE RastreadorHabitosDB;
+GO
+USE RastreadorHabitosDB;
+GO
+
+// Tabla Categorias
+CREATE TABLE Categorias (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Nombre NVARCHAR(100) NOT NULL
+);
+
+// Tabla Habitos (Relacionada a Categorias)
+CREATE TABLE Habitos (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    CategoriaId INT NOT NULL,
+    Nombre NVARCHAR(150) NOT NULL,
+    FrecuenciaSemanal INT NOT NULL,
+    FOREIGN KEY (CategoriaId) REFERENCES Categorias(Id)
+);
+
+// Tabla RegistrosDiarios (Relacionada a Habitos)
+CREATE TABLE RegistrosDiarios (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    HabitoId INT NOT NULL,
+    Fecha DATE NOT NULL,
+    Completado BIT NOT NULL DEFAULT 0,
+    Notas NVARCHAR(255),
+    FOREIGN KEY (HabitoId) REFERENCES Habitos(Id)
+);
+
+// Tabla Metas (Relacionada a Habitos)
+CREATE TABLE Metas (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    HabitoId INT NOT NULL,
+    DiasObjetivo INT NOT NULL,
+    FechaInicio DATE NOT NULL,
+    FOREIGN KEY (HabitoId) REFERENCES Habitos(Id)
+
+    El EstadoID lo voy a agregar la proxima semana segun la instruccion
+);

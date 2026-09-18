@@ -1,0 +1,6 @@
+﻿Bitacora de Diseño:
+Le pedi a la IA que revisara el diagrama de componentes y me dio la siguiente critica:
+"El diagrama tiene buena cohesion. Sin embargo, para mayor seguridad, noto que Control de Acceso apunta hacia Habitos. El modulo de Habitos tambien deberia apuntar y depender directamente de Control de Acceso cada vez que se guarde un registro diario, creando una dependencia bidireccional entre ellos."
+
+Correccion al agente (Donde se equivoco):
+La IA se equivoco al sugerir una "dependencia bidireccional". En una buena arquitectura, las dependencias circulares son una mala practica porque acoplan fuertemente los modulos. El Modulo de Habitos no tiene por que saber como internamente funciona el Control de Acceso; simplemente recibe al usuario ya autenticado por el flujo inicial. El diagrama original (unidireccional) es el correcto.
