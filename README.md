@@ -1,1 +1,1 @@
-Contenido inicial del proyecto
+Contenido inicial del proyecto. Esto es un prototipo.
