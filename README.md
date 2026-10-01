@@ -1,3 +1,5 @@
+Contenido inicial del proyecto. Versión 0.1. Esto es un prototipo.
+
 ```mermaid
 graph LR
     %% 1. Bloque Izquierdo (Entrada)
