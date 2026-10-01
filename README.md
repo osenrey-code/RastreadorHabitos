@@ -36,15 +36,15 @@ dotnet run --project .\RastreadorHabitos.Api\RastreadorHabitos.Api.csproj --no-l
 
 El Administrador inicial se crea una sola vez. Reiniciar la API no cambia su contrasena ni borra usuarios. La API responde en `http://localhost:5075/`. Si el enlace se abrira desde otro dispositivo, configure `RASTREADOR_BASE_URL` con una direccion accesible desde el.
 
-En la **segunda terminal**, configure el mismo directorio y el servidor de correo. Los valores SMTP los proporciona su servidor:
+En la **segunda terminal**, configure el mismo directorio y el servidor de correo. Para Gmail, active la verificacion en dos pasos en su cuenta y cree una [contrasena de aplicacion](https://support.google.com/accounts/answer/185833?hl=es). Use `smtp.gmail.com`, puerto `587`, y el mismo correo de Gmail para remitente y usuario. No use la contrasena normal de la cuenta. La [configuracion SMTP de Gmail](https://support.google.com/mail/answer/7104828?hl=es) requiere STARTTLS en ese puerto:
 
 ```powershell
 $env:RASTREADOR_DATA_DIR = Join-Path (Get-Location) 'data'
-$env:RASTREADOR_SMTP_HOST = Read-Host 'Servidor SMTP'
-$env:RASTREADOR_SMTP_PORT = Read-Host 'Puerto SMTP'
-$env:RASTREADOR_SMTP_FROM = Read-Host 'Correo remitente'
-$env:RASTREADOR_SMTP_USER = Read-Host 'Usuario SMTP'
-$env:RASTREADOR_SMTP_PASSWORD = Read-Host 'Contrasena SMTP' -MaskInput
+$env:RASTREADOR_SMTP_HOST = 'smtp.gmail.com'
+$env:RASTREADOR_SMTP_PORT = '587'
+$env:RASTREADOR_SMTP_FROM = Read-Host 'Correo de Gmail remitente'
+$env:RASTREADOR_SMTP_USER = $env:RASTREADOR_SMTP_FROM
+$env:RASTREADOR_SMTP_PASSWORD = Read-Host 'Contrasena de aplicacion de Gmail' -MaskInput
 dotnet run --project .\RastreadorHabitos.Api\RastreadorHabitos.Api.csproj --no-launch-profile -- send-mail
 ```
 
