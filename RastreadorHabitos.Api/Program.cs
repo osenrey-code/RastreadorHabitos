@@ -23,6 +23,10 @@ if (args.Contains("send-mail", StringComparer.OrdinalIgnoreCase))
     }
 }
 
+servicio.CrearAdministradorInicial(
+    Environment.GetEnvironmentVariable("RASTREADOR_ADMIN_EMAIL"),
+    Environment.GetEnvironmentVariable("RASTREADOR_ADMIN_PASSWORD"));
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.ConfigureHttpJsonOptions(opciones =>
     opciones.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -53,5 +57,6 @@ app.MapGet("/", () => Results.Ok(new { nombre = "RastreadorHabitos", version = "
 RutasRegistro.Mapear(app);
 RutasSesion.Mapear(app);
 RutasContrasenas.Mapear(app);
+RutasAdministracion.Mapear(app);
 
 app.Run();
