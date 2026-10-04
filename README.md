@@ -10,6 +10,19 @@ Proyecto de Programacion III en C#/.NET 10. La Practica 1 se ejecuta desde `Rast
 
 No se necesita SQL Server ni instalar paquetes NuGet adicionales. El archivo de datos se crea al iniciar en `data/rastreador.json` y `data/` esta excluido de Git. Los valores de las variables son privados; no deben guardarse en archivos versionados.
 
+## Obtener la version de la practica
+
+En PowerShell, clone el repositorio y cambie a la etiqueta que se evalua:
+
+```powershell
+git clone https://github.com/osenrey-code/RastreadorHabitos.git
+Set-Location .\RastreadorHabitos
+git checkout practica-1
+dotnet --version
+```
+
+El SDK debe ser .NET 10. Todos los comandos restantes de este README se ejecutan desde la raiz clonada. Configure las variables de entorno en las terminales indicadas antes de iniciar la API y el procesador de correo.
+
 ## Variables de entorno
 
 | Variable | Uso |
@@ -87,7 +100,14 @@ Enviar '/api/auth/resend-activation' @{correo=$correo}
 Enviar '/api/auth/resend-activation' @{correo='ausente@example.com'}
 ```
 
-Las dos respuestas son iguales; el enlace anterior deja de servir. Para inspeccionar el hash con sal, registre dos usuarios con la misma clave y compare `HashContrasena` en `data/rastreador.json`: los valores son distintos y no contienen la clave. El archivo nunca debe subirse al repositorio.
+Las dos respuestas son iguales; el enlace anterior deja de servir. Para inspeccionar el hash con sal, registre un segundo usuario con otra direccion real y la misma clave:
+
+```powershell
+$correoHash = Read-Host 'Otro correo real para comparar hashes'
+Enviar '/api/auth/register' @{nombre='Comparacion'; correo=$correoHash; contrasena=$clave}
+```
+
+Ejecute `send-mail` en la segunda terminal, active esa cuenta desde su correo y compare ambos valores `HashContrasena` en `data/rastreador.json`: deben ser distintos y no contener la clave. El archivo nunca debe subirse al repositorio.
 
 ### Sesion y bloqueo: RF-CA-03, 07, 18, 19
 
@@ -103,14 +123,14 @@ Enviar '/api/me/logout' @{} 'Post' $token
 Enviar '/api/me/' @{} 'Get' $token
 ```
 
-La consulta autenticada devuelve el usuario y rol; ambos inicios fallidos devuelven el mismo mensaje `401`; tras cerrar sesion, la credencial devuelve `401`. Para comprobar el bloqueo, haga cinco peticiones con clave incorrecta y luego una con la correcta:
+La consulta autenticada devuelve el usuario y rol; ambos inicios fallidos devuelven el mismo mensaje `401`; tras cerrar sesion, la credencial devuelve `401`. En esta secuencia ya se hizo un intento fallido para demostrar el mensaje generico. Haga cuatro intentos fallidos adicionales (intentos 2 a 5) y luego pruebe la clave correcta como sexto intento:
 
 ```powershell
-1..5 | ForEach-Object { (Enviar '/api/auth/login' @{correo=$correo; contrasena='Incorrecta1'}).StatusCode }
+1..4 | ForEach-Object { (Enviar '/api/auth/login' @{correo=$correo; contrasena='Incorrecta1'}).StatusCode }
 (Enviar '/api/auth/login' @{correo=$correo; contrasena=$clave}).StatusCode
 ```
 
-El sexto intento devuelve `429` durante 15 minutos. Use otra cuenta o espere ese tiempo para continuar.
+Los cuatro intentos adicionales devuelven `401` y el sexto (aunque use la clave correcta) devuelve `429` durante 15 minutos. Use otra cuenta o espere ese tiempo para continuar.
 
 ### Roles y administracion: RF-CA-04 a 06, 08, 20, 21
 
@@ -171,11 +191,13 @@ Enviar "/api/admin/users/$id/force-reset" @{} 'Post' $admin
 
 Ejecute `send-mail`, copie el nuevo codigo del correo y utilice `/api/auth/reset-password` con ese codigo. La contrasena anterior deja de servir inmediatamente.
 
+El codigo de recuperacion vence a los 30 minutos. La comprobacion automatizada demuestra el rechazo sin esperar ese tiempo real: usa un reloj controlado, avanza 31 minutos e intenta reutilizar el codigo vencido. Ejecute el verificador al final de este README para repetirla. Para comprobarlo manualmente contra la API, solicite otro codigo, espere mas de 30 minutos y envie `/api/auth/reset-password`; debe responder `400`.
+
 ### Cola y persistencia: RF-NOT-08, 09, 12, 13; RD-09 y RD-10
 
 Detenga el acceso al servidor SMTP y registre otro usuario: el registro devuelve `201` y el correo queda con `Estado: Pendiente` en `data/rastreador.json`. Vuelva a habilitar SMTP y ejecute `send-mail` dos veces; el segundo comando indica `Enviados: 0`. Reinicie la API con el mismo `RASTREADOR_DATA_DIR`: los usuarios siguen presentes.
 
-El envio real requiere credenciales SMTP. No se pueden verificar correos entregados sin un servidor configurado. Las pruebas locales de logica se ejecutan con:
+El envio real requiere credenciales SMTP. No se pueden verificar correos entregados sin un servidor configurado. Las pruebas locales de logica, incluidas la expiracion del enlace de activacion, el sexto intento de inicio de sesion y la expiracion del codigo de recuperacion, se ejecutan con:
 
 ```powershell
 dotnet run --project .\RastreadorHabitos.Verificacion\RastreadorHabitos.Verificacion.csproj
