@@ -74,6 +74,11 @@ try
     Comprobar(recuperacionExistente == recuperacionAusente, "recuperacion no revela usuarios");
     string Codigo(Guid id) => Regex.Match(almacen.Leer(e => e.Correos.Last(c => c.Destinatario ==
         e.Usuarios.Single(u => u.Id == id).Correo).Cuerpo), "([0-9a-f]{64})").Groups[1].Value;
+    var codigoVencido = Codigo(ana.Id);
+    reloj.Avanzar(TimeSpan.FromMinutes(31));
+    Rechaza(() => acceso.Restablecer(new RecuperarPeticion(ana.Correo, codigoVencido, "Nueva12345")), 400,
+        "codigo de recuperacion vencido");
+    acceso.SolicitarRecuperacion(new CorreoPeticion(ana.Correo));
     var codigo = Codigo(ana.Id);
     var sesionAntes = acceso.Iniciar(new InicioPeticion(ana.Correo, "Clave12345"));
     acceso.Restablecer(new RecuperarPeticion(ana.Correo, codigo, "Nueva12345"));
