@@ -2,4 +2,5 @@
   <Project Path="RastreadorHabitos/RastreadorHabitos.csproj" />
   <Project Path="RastreadorHabitos.Api/RastreadorHabitos.Api.csproj" />
   <Project Path="RastreadorHabitos.Verificacion/RastreadorHabitos.Verificacion.csproj" />
+  <Project Path="RastreadorHabitos.Pruebas/RastreadorHabitos.Pruebas.csproj" />
 </Solution>
