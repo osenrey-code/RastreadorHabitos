@@ -53,10 +53,11 @@ app.Use(async (context, siguiente) =>
     }
 });
 
-app.MapGet("/", () => Results.Ok(new { nombre = "RastreadorHabitos", version = "practica-1" }));
+app.MapGet("/", () => Results.Ok(new { nombre = "RastreadorHabitos", version = "asignacion-2" }));
 RutasRegistro.Mapear(app);
 RutasSesion.Mapear(app);
 RutasContrasenas.Mapear(app);
 RutasAdministracion.Mapear(app);
+RutasPermisos.Mapear(app);
 
 app.Run();
