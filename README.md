@@ -1,6 +1,6 @@
-# Rastreador de habitos con metas
+# Rastreador de hábitos con metas
 
-Proyecto de Programacion III en C#/.NET 10. La Practica 1 se ejecuta desde `RastreadorHabitos.Api`, una API HTTP independiente de la plantilla WinForms inicial. Los usuarios, sesiones y correos se guardan en JSON fuera del proceso. La estructura de estados del modulo de negocio esta en [docs/maquina-de-estados.md](docs/maquina-de-estados.md).
+Proyecto de Programación III en C#/.NET 10. La Asignación 2 se ejecuta desde `RastreadorHabitos.Api`, una API HTTP independiente de la plantilla WinForms inicial. Además del control de acceso de la Práctica 1, incorpora Gestión de permisos con solicitudes persistentes, aprobación o rechazo en el servidor y aplicación automática del permiso aprobado. Los usuarios, sesiones, correos y solicitudes se guardan en JSON fuera del proceso.
 
 ## Requisitos para ejecutar
 
@@ -10,14 +10,14 @@ Proyecto de Programacion III en C#/.NET 10. La Practica 1 se ejecuta desde `Rast
 
 No se necesita SQL Server ni instalar paquetes NuGet adicionales. El archivo de datos se crea al iniciar en `data/rastreador.json` y `data/` esta excluido de Git. Los valores de las variables son privados; no deben guardarse en archivos versionados.
 
-## Obtener la version de la practica
+## Obtener la versión evaluada
 
 En PowerShell, clone el repositorio y cambie a la etiqueta que se evalua:
 
 ```powershell
 git clone https://github.com/osenrey-code/RastreadorHabitos.git
 Set-Location .\RastreadorHabitos
-git checkout practica-1
+git checkout asignacion-2
 dotnet --version
 ```
 
@@ -63,7 +63,17 @@ dotnet run --project .\RastreadorHabitos.Api\RastreadorHabitos.Api.csproj --no-l
 
 Ejecute la ultima linea cada vez que quiera enviar los correos pendientes. La API no contacta SMTP durante el registro ni la recuperacion. Si el servidor no responde, los correos siguen pendientes; corrija la conexion y vuelva a ejecutar el comando. Tras un envio correcto, ejecutarlo otra vez no reenvia el mismo correo.
 
-## Comandos de verificacion
+## Pruebas
+
+Desde un clon limpio, un solo comando restaura las dependencias, compila y ejecuta toda la suite de Gestión de permisos sin levantar la API:
+
+```powershell
+dotnet test .\RastreadorHabitos.Pruebas\RastreadorHabitos.Pruebas.csproj
+```
+
+La suite contiene diez pruebas MSTest independientes. Cada una separa las fases preparar, actuar y verificar, y cubre creación, entrada inválida, visibilidad, listado pendiente, aprobación con aplicación automática, rechazo con motivo, transiciones prohibidas, autorresolución y persistencia.
+
+## Comandos base de verificación
 
 Los ejemplos se ejecutan en una **tercera terminal** PowerShell 7, con el servidor en marcha. Use un correo propio distinto del Administrador:
 
@@ -82,6 +92,89 @@ function Enviar($ruta, $datos, $metodo = 'Post', $token = '') {
     Invoke-WebRequest @opciones
 }
 ```
+
+## Gestión de permisos: RF-GP-01 a 07
+
+Inicie la API con un Administrador configurado y tenga al menos una cuenta Estándar activa. En la tercera terminal, después de definir `$base` y `Enviar`, obtenga ambas sesiones:
+
+```powershell
+$correo = Read-Host 'Correo del usuario Estandar activo'
+$clave = Read-Host 'Contrasena del usuario Estandar' -MaskInput
+$token = ((Enviar '/api/auth/login' @{correo=$correo; contrasena=$clave}).Content | ConvertFrom-Json).token
+$correoAdmin = Read-Host 'Correo del Administrador'
+$claveAdmin = Read-Host 'Contrasena del Administrador' -MaskInput
+$admin = ((Enviar '/api/auth/login' @{correo=$correoAdmin; contrasena=$claveAdmin}).Content | ConvertFrom-Json).token
+$usuarios = (Enviar '/api/admin/users' @{} 'Get' $admin).Content | ConvertFrom-Json
+$idUsuario = ($usuarios | Where-Object correo -eq $correo).id
+```
+
+### RF-GP-01 Crear una solicitud pendiente
+
+```powershell
+$solicitud = (Enviar '/api/permisos/solicitudes' @{permiso='habitos.exportar'} 'Post' $token).Content | ConvertFrom-Json
+$solicitud
+```
+
+La respuesta es `201` y muestra `estado: Pendiente`.
+
+### RF-GP-02 Consultar solicitudes con la visibilidad correcta
+
+```powershell
+Enviar '/api/admin/permisos/solicitudes/pendientes' @{} 'Get' $admin
+Enviar '/api/permisos/solicitudes' @{} 'Get' $token
+$idAjeno = Read-Host 'Id de una solicitud creada por otro usuario Estandar'
+Enviar "/api/permisos/solicitudes/$idAjeno" @{} 'Get' $token
+```
+
+El Administrador ve las pendientes. El usuario Estándar solo ve las suyas; consultar por identificador una solicitud ajena devuelve `403`.
+
+### RF-GP-03 y RF-GP-05 Aprobar y aplicar automáticamente
+
+```powershell
+Enviar "/api/admin/permisos/solicitudes/$($solicitud.id)/aprobar" @{} 'Post' $admin
+Enviar '/api/permisos/habitos.exportar/comprobar' @{} 'Get' $token
+```
+
+La aprobación devuelve `estado: Aplicada`, `resueltaPor` con el identificador del Administrador y `resuelta` con la fecha. La comprobación devuelve `concedido: true`, sin intervención manual adicional.
+
+### RF-GP-04 Rechazar con motivo escrito
+
+```powershell
+$paraRechazar = (Enviar '/api/permisos/solicitudes' @{permiso='habitos.eliminar'} 'Post' $token).Content | ConvertFrom-Json
+Enviar "/api/admin/permisos/solicitudes/$($paraRechazar.id)/rechazar" @{motivo='   '} 'Post' $admin
+Enviar "/api/permisos/solicitudes/$($paraRechazar.id)" @{} 'Get' $token
+Enviar "/api/admin/permisos/solicitudes/$($paraRechazar.id)/rechazar" @{motivo='No corresponde al perfil'} 'Post' $admin
+```
+
+El motivo vacío devuelve `400` y la consulta siguiente conserva `Pendiente`. El rechazo válido devuelve `Rechazada` y registra el motivo.
+
+### RF-GP-06 Rechazar transiciones prohibidas
+
+```powershell
+Enviar "/api/admin/permisos/solicitudes/$($solicitud.id)/aprobar" @{} 'Post' $admin
+Enviar "/api/permisos/solicitudes/$($solicitud.id)" @{} 'Get' $token
+Enviar "/api/admin/permisos/solicitudes/$($paraRechazar.id)/aprobar" @{} 'Post' $admin
+Enviar "/api/permisos/solicitudes/$($paraRechazar.id)" @{} 'Get' $token
+```
+
+Aprobar por segunda vez y aprobar una solicitud rechazada devuelven `409`; los estados permanecen `Aplicada` y `Rechazada`, respectivamente.
+
+### RF-GP-07 Impedir que alguien resuelva su propia solicitud
+
+Primero cree una solicitud pendiente con el usuario Estándar. Luego el Administrador convierte esa misma cuenta en Administrador. El cambio de rol cierra sus sesiones, por lo que debe iniciar sesión otra vez antes de intentar aprobar su propia solicitud:
+
+```powershell
+$propia = (Enviar '/api/permisos/solicitudes' @{permiso='habitos.administrar'} 'Post' $token).Content | ConvertFrom-Json
+Enviar "/api/admin/users/$idUsuario/role" @{rol='Administrador'} 'Put' $admin
+$adminSolicitante = ((Enviar '/api/auth/login' @{correo=$correo; contrasena=$clave}).Content | ConvertFrom-Json).token
+Enviar "/api/admin/permisos/solicitudes/$($propia.id)/aprobar" @{} 'Post' $adminSolicitante
+```
+
+La última operación devuelve `403` y la solicitud sigue `Pendiente`.
+
+### Persistencia RD-09
+
+Detenga y reinicie la API conservando el mismo `RASTREADOR_DATA_DIR`. Vuelva a iniciar sesión y ejecute `GET /api/permisos/solicitudes`: las solicitudes y los permisos aplicados continúan disponibles.
 
 ### Registro y activacion: RF-CA-01, 02, 14 a 17
 
@@ -207,7 +300,7 @@ dotnet run --project .\RastreadorHabitos.Verificacion\RastreadorHabitos.Verifica
 
 La entidad `Meta` tiene `EstadoMeta` con cuatro estados. Las transiciones permitidas, la prohibida explicita y los estados terminales se declaran en `RastreadorHabitos.Api/EstadoMeta.cs`; la tabla exigida esta en `docs/maquina-de-estados.md`. Las operaciones completas del rastreador se entregan despues.
 
-La practica solicita cuatro pull requests como minimo, cada uno con "Que cambia", "Por que", "Como probarlo" y "Que NO incluye", y un tag `practica-1` sobre el punto integrado. El tag se envia con `git push origin --tags`; en Moodle se entrega la URL del repositorio y el nombre de la etiqueta. No coloque contrasenas ni `data/` en Git.
+La Asignación 2 se entrega con un tag `asignacion-2` sobre el punto integrado. El tag se envía con `git push origin --tags`; en Moodle se entrega la URL del repositorio y el nombre de la etiqueta. No coloque contraseñas ni `data/` en Git.
 
 ## Diagrama de componentes existente
 
