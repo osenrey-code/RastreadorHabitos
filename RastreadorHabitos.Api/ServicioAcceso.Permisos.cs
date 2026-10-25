@@ -6,6 +6,7 @@ public sealed partial class ServicioAcceso
     [
         (EstadoSolicitudPermiso.Pendiente, EstadoSolicitudPermiso.Aprobada),
         (EstadoSolicitudPermiso.Aprobada, EstadoSolicitudPermiso.Aplicada),
+        (EstadoSolicitudPermiso.Aprobada, EstadoSolicitudPermiso.Pendiente),
         (EstadoSolicitudPermiso.Pendiente, EstadoSolicitudPermiso.Rechazada)
     ];
 
