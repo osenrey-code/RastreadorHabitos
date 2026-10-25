@@ -46,7 +46,7 @@ public sealed partial class ServicioAcceso
         var solicitud = BuscarSolicitud(estado, solicitudId);
         if (!usuario.Activo)
             throw new ErrorDeDominio(403, "La cuenta no esta activa.");
-        if (usuario.Rol != Rol.Administrador && solicitud.SolicitanteId != usuario.Id)
+        if (usuario.Rol != Rol.Administrador && solicitud.SolicitanteId == usuario.Id)
             throw new ErrorDeDominio(403, "No puede consultar solicitudes de otros usuarios.");
         return Publica(solicitud);
     });
