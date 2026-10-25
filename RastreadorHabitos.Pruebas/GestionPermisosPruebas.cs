@@ -155,6 +155,50 @@ public sealed class GestionPermisosPruebas
     }
 
     [TestMethod]
+    public void RF_GP_06_Rechazada_NoPuedeTransicionarAAplicada()
+    {
+        // Preparar
+        var solicitud = _servicio.CrearSolicitudPermiso(_estandar.Id, "habitos.exportar");
+        var almacenada = _almacen.Cambiar(estado =>
+        {
+            var encontrada = estado.SolicitudesPermisos.Single(s => s.Id == solicitud.Id);
+            encontrada.Estado = EstadoSolicitudPermiso.Rechazada;
+            return encontrada;
+        });
+
+        // Actuar
+        var error = Assert.ThrowsExactly<ErrorDeDominio>(() =>
+            ServicioAcceso.CambiarEstado(almacenada, EstadoSolicitudPermiso.Aplicada));
+
+        // Verificar
+        Assert.AreEqual(409, error.Codigo);
+        Assert.AreEqual(EstadoSolicitudPermiso.Rechazada,
+            _servicio.ObtenerSolicitudPermiso(_estandar.Id, solicitud.Id).Estado);
+    }
+
+    [TestMethod]
+    public void RF_GP_06_Aprobada_NoPuedeVolverAPendiente()
+    {
+        // Preparar
+        var solicitud = _servicio.CrearSolicitudPermiso(_estandar.Id, "habitos.exportar");
+        var almacenada = _almacen.Cambiar(estado =>
+        {
+            var encontrada = estado.SolicitudesPermisos.Single(s => s.Id == solicitud.Id);
+            encontrada.Estado = EstadoSolicitudPermiso.Aprobada;
+            return encontrada;
+        });
+
+        // Actuar
+        var error = Assert.ThrowsExactly<ErrorDeDominio>(() =>
+            ServicioAcceso.CambiarEstado(almacenada, EstadoSolicitudPermiso.Pendiente));
+
+        // Verificar
+        Assert.AreEqual(409, error.Codigo);
+        Assert.AreEqual(EstadoSolicitudPermiso.Aprobada,
+            _servicio.ObtenerSolicitudPermiso(_estandar.Id, solicitud.Id).Estado);
+    }
+
+    [TestMethod]
     public void RF_GP_07_ResolverSolicitud_Propia_LaRechaza()
     {
         // Preparar
@@ -164,6 +208,23 @@ public sealed class GestionPermisosPruebas
         // Actuar
         var error = Assert.ThrowsExactly<ErrorDeDominio>(() =>
             _servicio.AprobarSolicitudPermiso(_estandar.Id, solicitud.Id));
+
+        // Verificar
+        Assert.AreEqual(403, error.Codigo);
+        Assert.AreEqual(EstadoSolicitudPermiso.Pendiente,
+            _servicio.ObtenerSolicitudPermiso(_estandar.Id, solicitud.Id).Estado);
+    }
+
+    [TestMethod]
+    public void RF_GP_07_ResolverSolicitudPropia_RechazarTambienLoRechaza()
+    {
+        // Preparar
+        var solicitud = _servicio.CrearSolicitudPermiso(_estandar.Id, "habitos.exportar");
+        _servicio.CambiarRol(_estandar.Id, Rol.Administrador);
+
+        // Actuar
+        var error = Assert.ThrowsExactly<ErrorDeDominio>(() =>
+            _servicio.RechazarSolicitudPermiso(_estandar.Id, solicitud.Id, "No corresponde al perfil"));
 
         // Verificar
         Assert.AreEqual(403, error.Codigo);

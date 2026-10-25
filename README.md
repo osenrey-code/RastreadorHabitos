@@ -17,7 +17,7 @@ En PowerShell, clone el repositorio y cambie a la etiqueta que se evalua:
 ```powershell
 git clone https://github.com/osenrey-code/RastreadorHabitos.git
 Set-Location .\RastreadorHabitos
-git checkout asignacion-2
+git checkout practica-2
 dotnet --version
 ```
 
@@ -70,6 +70,19 @@ Desde un clon limpio, un solo comando restaura las dependencias, compila y ejecu
 ```powershell
 dotnet test .\RastreadorHabitos.Pruebas\RastreadorHabitos.Pruebas.csproj
 ```
+
+## Defectos
+
+Cada defecto se planta en un commit hijo directo de `practica-2`, sin modificar archivos de prueba. El mismo comando de `Pruebas` debe detectar:
+
+- Defecto 1: `RF_GP_06_AprobarSolicitud_DosVeces_RechazaYConservaEstadoAplicada` confirma que una solicitud aplicada no puede aprobarse otra vez.
+- Defecto 2: `RF_GP_06_Rechazada_NoPuedeTransicionarAAplicada` confirma que una solicitud rechazada no puede llegar a aplicada.
+- Defecto 3: `RF_GP_07_ResolverSolicitud_Propia_LaRechaza` confirma que un administrador no puede aprobar su propia solicitud.
+- Defecto 4: `RF_GP_02_ObtenerSolicitud_DeOtroUsuarioEstandar_LaRechaza` confirma que un usuario estandar no puede consultar la solicitud de otro.
+- Defecto 5: `RF_GP_06_Aprobada_NoPuedeVolverAPendiente` confirma que una solicitud aprobada no puede volver a pendiente.
+- Defecto 6: `RF_GP_04_RechazarSolicitud_ConMotivo_RegistraElMotivo` confirma que el rechazo conserva el motivo proporcionado.
+
+Las etiquetas `practica-2-defecto-1` a `practica-2-defecto-6` apuntan cada una a su commit defectuoso. En `practica-2`, todas las pruebas deben pasar; en cada etiqueta de defecto, al menos una debe fallar.
 
 La suite contiene diez pruebas MSTest independientes. Cada una separa las fases preparar, actuar y verificar, y cubre creación, entrada inválida, visibilidad, listado pendiente, aprobación con aplicación automática, rechazo con motivo, transiciones prohibidas, autorresolución y persistencia.
 
@@ -300,7 +313,7 @@ dotnet run --project .\RastreadorHabitos.Verificacion\RastreadorHabitos.Verifica
 
 La entidad `Meta` tiene `EstadoMeta` con cuatro estados. Las transiciones permitidas, la prohibida explicita y los estados terminales se declaran en `RastreadorHabitos.Api/EstadoMeta.cs`; la tabla exigida esta en `docs/maquina-de-estados.md`. Las operaciones completas del rastreador se entregan despues.
 
-La Asignación 2 se entrega con un tag `asignacion-2` sobre el punto integrado. El tag se envía con `git push origin --tags`; en Moodle se entrega la URL del repositorio y el nombre de la etiqueta. No coloque contraseñas ni `data/` en Git.
+La Práctica 2 se entrega con el tag `practica-2` sobre la suite limpia. En Moodle se entrega la URL del repositorio y el nombre `practica-2`; los seis tags de defecto permanecen en el mismo repositorio. Envíe las etiquetas con `git push origin --tags`. No coloque contraseñas ni `data/` en Git.
 
 ## Diagrama de componentes existente
 

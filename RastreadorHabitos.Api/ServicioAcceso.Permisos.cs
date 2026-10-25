@@ -139,7 +139,7 @@ public sealed partial class ServicioAcceso
             throw new ErrorDeDominio(403, "Nadie puede resolver su propia solicitud.");
     }
 
-    private static void CambiarEstado(SolicitudPermiso solicitud, EstadoSolicitudPermiso nuevoEstado)
+    internal static void CambiarEstado(SolicitudPermiso solicitud, EstadoSolicitudPermiso nuevoEstado)
     {
         if (!TransicionesPermiso.Contains((solicitud.Estado, nuevoEstado)))
             throw new ErrorDeDominio(409,
