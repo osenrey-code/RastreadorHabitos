@@ -135,8 +135,6 @@ public sealed partial class ServicioAcceso
 
     private static void ValidarResolutor(Usuario administrador, SolicitudPermiso solicitud)
     {
-        if (administrador.Id == solicitud.SolicitanteId)
-            throw new ErrorDeDominio(403, "Nadie puede resolver su propia solicitud.");
     }
 
     internal static void CambiarEstado(SolicitudPermiso solicitud, EstadoSolicitudPermiso nuevoEstado)
