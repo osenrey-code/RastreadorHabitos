@@ -94,7 +94,6 @@ public sealed partial class ServicioAcceso
         CambiarEstado(solicitud, EstadoSolicitudPermiso.Rechazada);
         solicitud.ResueltaPor = administrador.Id;
         solicitud.Resuelta = Ahora;
-        solicitud.MotivoRechazo = motivoNormalizado;
         return Publica(solicitud);
     });
 
