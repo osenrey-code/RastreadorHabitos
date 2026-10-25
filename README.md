@@ -84,7 +84,7 @@ Cada defecto se planta en un commit hijo directo de `practica-2`, sin modificar 
 
 Las etiquetas `practica-2-defecto-1` a `practica-2-defecto-6` apuntan cada una a su commit defectuoso. En `practica-2`, todas las pruebas deben pasar; en cada etiqueta de defecto, al menos una debe fallar.
 
-La suite contiene diez pruebas MSTest independientes. Cada una separa las fases preparar, actuar y verificar, y cubre creación, entrada inválida, visibilidad, listado pendiente, aprobación con aplicación automática, rechazo con motivo, transiciones prohibidas, autorresolución y persistencia.
+La suite contiene trece pruebas MSTest independientes. Cada una separa las fases preparar, actuar y verificar, y cubre creación, entrada inválida, visibilidad, listado pendiente, aprobación con aplicación automática, rechazo con motivo, transiciones prohibidas, autorresolución y persistencia.
 
 ## Comandos base de verificación
 
