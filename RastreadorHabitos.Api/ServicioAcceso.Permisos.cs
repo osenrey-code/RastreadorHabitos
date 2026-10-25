@@ -141,7 +141,9 @@ public sealed partial class ServicioAcceso
 
     internal static void CambiarEstado(SolicitudPermiso solicitud, EstadoSolicitudPermiso nuevoEstado)
     {
-        if (!TransicionesPermiso.Contains((solicitud.Estado, nuevoEstado)))
+        if (!TransicionesPermiso.Contains((solicitud.Estado, nuevoEstado)) &&
+            !(nuevoEstado == EstadoSolicitudPermiso.Aprobada &&
+              solicitud.Estado != EstadoSolicitudPermiso.Rechazada))
             throw new ErrorDeDominio(409,
                 $"La transicion {solicitud.Estado} -> {nuevoEstado} no esta permitida.");
         solicitud.Estado = nuevoEstado;
