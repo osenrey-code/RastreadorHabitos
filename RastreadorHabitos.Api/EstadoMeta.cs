@@ -19,6 +19,7 @@ public static class TransicionesMeta
     [
         (EstadoMeta.Pendiente, EstadoMeta.Activa),
         (EstadoMeta.Pendiente, EstadoMeta.Cancelada),
+        (EstadoMeta.Pendiente, EstadoMeta.Completada),
         (EstadoMeta.Activa, EstadoMeta.Completada),
         (EstadoMeta.Activa, EstadoMeta.Cancelada)
     ];
