@@ -10,6 +10,9 @@ public sealed class Meta
     public EstadoMeta Estado { get; set; } = EstadoMeta.Pendiente;
 }
 
+public sealed record MetaPublica(Guid Id, Guid UsuarioId, string Nombre, EstadoMeta Estado);
+public sealed record CrearMetaPeticion(string? Nombre);
+
 public static class TransicionesMeta
 {
     private static readonly HashSet<(EstadoMeta Desde, EstadoMeta Hacia)> Permitidas =
@@ -25,4 +28,12 @@ public static class TransicionesMeta
 
     public static bool PuedeCambiar(EstadoMeta desde, EstadoMeta hacia) =>
         Permitidas.Contains((desde, hacia));
+
+    public static void CambiarEstado(Meta meta, EstadoMeta hacia)
+    {
+        if (!PuedeCambiar(meta.Estado, hacia))
+            throw new ErrorDeDominio(409,
+                $"La transicion {meta.Estado} -> {hacia} no esta permitida.");
+        meta.Estado = hacia;
+    }
 }

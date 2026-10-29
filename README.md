@@ -1,6 +1,6 @@
 # Rastreador de hábitos con metas
 
-Proyecto de Programación III en C#/.NET 10. La Asignación 2 se ejecuta desde `RastreadorHabitos.Api`, una API HTTP independiente de la plantilla WinForms inicial. Además del control de acceso de la Práctica 1, incorpora Gestión de permisos con solicitudes persistentes, aprobación o rechazo en el servidor y aplicación automática del permiso aprobado. Los usuarios, sesiones, correos y solicitudes se guardan en JSON fuera del proceso.
+Proyecto de Programación III en C#/.NET 10. La API HTTP implementa Control de acceso, Gestión de permisos y el módulo de negocio de metas; el cliente WinForms continúa como plantilla inicial. Los usuarios, sesiones, correos, solicitudes de permiso y metas se guardan en JSON fuera del proceso.
 
 ## Requisitos para ejecutar
 
@@ -17,7 +17,7 @@ En PowerShell, clone el repositorio y cambie a la etiqueta que se evalua:
 ```powershell
 git clone https://github.com/osenrey-code/RastreadorHabitos.git
 Set-Location .\RastreadorHabitos
-git checkout practica-2
+git checkout practica-3
 dotnet --version
 ```
 
@@ -65,26 +65,52 @@ Ejecute la ultima linea cada vez que quiera enviar los correos pendientes. La AP
 
 ## Pruebas
 
-Desde un clon limpio, un solo comando restaura las dependencias, compila y ejecuta toda la suite de Gestión de permisos sin levantar la API:
+Desde un clon limpio, un solo comando restaura las dependencias, compila y ejecuta las pruebas de Gestión de permisos, del negocio y su integración, sin levantar la API:
 
 ```powershell
 dotnet test .\RastreadorHabitos.Pruebas\RastreadorHabitos.Pruebas.csproj
 ```
 
-## Defectos
+## Módulo de negocio: metas
 
-Cada defecto se planta en un commit hijo directo de `practica-2`, sin modificar archivos de prueba. El mismo comando de `Pruebas` debe detectar:
+El módulo expone seis operaciones separables: crear, listar las propias, activar, completar, cancelar y eliminar una meta propia. Las transiciones válidas, la prohibición explícita y los estados terminales están documentados en `docs/maquina-de-estados.md` y centralizados en `TransicionesMeta.CambiarEstado`.
 
-- Defecto 1: `RF_GP_06_AprobarSolicitud_DosVeces_RechazaYConservaEstadoAplicada` confirma que una solicitud aplicada no puede aprobarse otra vez.
-- Defecto 2: `RF_GP_06_Rechazada_NoPuedeTransicionarAAplicada` confirma que una solicitud rechazada no puede llegar a aplicada.
-- Defecto 3: `RF_GP_07_ResolverSolicitud_Propia_LaRechaza` confirma que un administrador no puede aprobar su propia solicitud.
-- Defecto 4: `RF_GP_02_ObtenerSolicitud_DeOtroUsuarioEstandar_LaRechaza` confirma que un usuario estandar no puede consultar la solicitud de otro.
-- Defecto 5: `RF_GP_06_Aprobada_NoPuedeVolverAPendiente` confirma que una solicitud aprobada no puede volver a pendiente.
-- Defecto 6: `RF_GP_04_RechazarSolicitud_ConMotivo_RegistraElMotivo` confirma que el rechazo conserva el motivo proporcionado.
+Las rutas son `GET /api/metas/`, `POST /api/metas/` con `{ "nombre": "Leer veinte minutos" }`, `PUT /api/metas/{id}/activar`, `PUT /api/metas/{id}/completar`, `PUT /api/metas/{id}/cancelar` y `DELETE /api/metas/{id}`. Todas requieren sesión válida y rol Estándar; solo el propietario puede operar sobre su meta. Eliminar requiere que Gestión de permisos haya concedido `habitos.eliminar`.
 
-Las etiquetas `practica-2-defecto-1` a `practica-2-defecto-6` apuntan cada una a su commit defectuoso. En `practica-2`, todas las pruebas deben pasar; en cada etiqueta de defecto, al menos una debe fallar.
+Para probarlas, inicia sesión y conserva el token Estándar como `$token` y el token de Administrador como `$admin`, según los pasos anteriores. La función `Enviar` del README agrega el encabezado `Authorization: Bearer <token>`:
 
-La suite contiene trece pruebas MSTest independientes. Cada una separa las fases preparar, actuar y verificar, y cubre creación, entrada inválida, visibilidad, listado pendiente, aprobación con aplicación automática, rechazo con motivo, transiciones prohibidas, autorresolución y persistencia.
+```powershell
+$meta = (Enviar '/api/metas/' @{nombre='Leer veinte minutos'} 'Post' $token).Content | ConvertFrom-Json
+Enviar '/api/metas/' @{} 'Get' $token
+Enviar "/api/metas/$($meta.id)/activar" @{} 'Put' $token
+Enviar "/api/metas/$($meta.id)/completar" @{} 'Put' $token
+
+$metaCancelar = (Enviar '/api/metas/' @{nombre='Meta para cancelar'} 'Post' $token).Content | ConvertFrom-Json
+Enviar "/api/metas/$($metaCancelar.id)/cancelar" @{} 'Put' $token
+
+$metaEliminar = (Enviar '/api/metas/' @{nombre='Meta protegida'} 'Post' $token).Content | ConvertFrom-Json
+Enviar "/api/metas/$($metaEliminar.id)" @{} 'Delete' $token
+$solicitudEliminar = (Enviar '/api/permisos/solicitudes' @{permiso='habitos.eliminar'} 'Post' $token).Content | ConvertFrom-Json
+Enviar "/api/admin/permisos/solicitudes/$($solicitudEliminar.id)/aprobar" @{} 'Post' $admin
+Enviar "/api/metas/$($metaEliminar.id)" @{} 'Delete' $token
+```
+
+La primera eliminación debe devolver `403`; después de aprobar la solicitud, la segunda devuelve `200`. Los datos sobreviven al reinicio de la API usando el mismo `RASTREADOR_DATA_DIR`.
+
+## Defectos de Práctica 3
+
+Cada defecto se planta en un commit hijo directo de `practica-3`, sin modificar archivos de prueba. El comando de la sección Pruebas debe detectar cada uno:
+
+- Defecto 1 (`practica-3-defecto-1`): se permite `Pendiente → Completada`; lo detecta `RF_NEG_04_PendienteACompletada_TransicionProhibida_RechazaYSinCambiarEstado`.
+- Defecto 2 (`practica-3-defecto-2`): se agrega una transición desde `Completada`; lo detecta `RF_NEG_05_Completada_EstadoTerminal_NoPermiteSalir`.
+- Defecto 3 (`practica-3-defecto-3`): se quita la comprobación de que el actor es propietario; lo detecta `RF_NEG_06_ActivarMeta_OtroUsuario_LaRechaza`.
+- Defecto 4 (`practica-3-defecto-4`): se elimina la consulta del permiso al borrar; lo detecta `RF_NEG_06_EliminarMeta_SoloConPermisoAprobado_PermiteOperacion`.
+
+Cada commit defectuoso modifica únicamente código de producción. Su mensaje identifica el archivo y la línea modificada. Sobre `practica-3`, la suite debe pasar completa; sobre cada etiqueta de defecto, al menos una prueba debe fallar. Las etiquetas de defectos de Práctica 2 se conservan aparte.
+
+## Revisión acumulada
+
+Sigue la configuración de las variables de entorno descrita arriba y estas secuencias del README para comprobar: registro y activación por correo; inicio y cierre de sesión; rechazo a usuario Estándar al llamar una operación de Administrador; solicitud y uso de recuperación de contraseña; solicitudes de permisos aprobadas/rechazadas y rechazo de transiciones inválidas. La API debe estar iniciada para estas verificaciones manuales. La suite automatizada no requiere servidor.
 
 ## Comandos base de verificación
 
@@ -311,9 +337,9 @@ dotnet run --project .\RastreadorHabitos.Verificacion\RastreadorHabitos.Verifica
 
 ## Maquina de estados y entrega
 
-La entidad `Meta` tiene `EstadoMeta` con cuatro estados. Las transiciones permitidas, la prohibida explicita y los estados terminales se declaran en `RastreadorHabitos.Api/EstadoMeta.cs`; la tabla exigida esta en `docs/maquina-de-estados.md`. Las operaciones completas del rastreador se entregan despues.
+La entidad `Meta` tiene cuatro estados. Las transiciones permitidas, la prohibida explícita y los estados terminales se declaran en `RastreadorHabitos.Api/EstadoMeta.cs`; la tabla se mantiene en `docs/maquina-de-estados.md`.
 
-La Práctica 2 se entrega con el tag `practica-2` sobre la suite limpia. En Moodle se entrega la URL del repositorio y el nombre `practica-2`; los seis tags de defecto permanecen en el mismo repositorio. Envíe las etiquetas con `git push origin --tags`. No coloque contraseñas ni `data/` en Git.
+La Práctica 3 se entrega con el tag `practica-3` sobre la suite limpia. En Moodle se entrega la URL del repositorio y el nombre `practica-3`; los cuatro tags de defecto se leen del mismo repositorio. Envíe las etiquetas requeridas con `git push origin --tags`. No coloque contraseñas ni `data/` en Git.
 
 ## Diagrama de componentes existente
 

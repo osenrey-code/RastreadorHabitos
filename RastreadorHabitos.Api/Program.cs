@@ -6,6 +6,7 @@ var directorio = Path.GetFullPath(Environment.GetEnvironmentVariable("RASTREADOR
 var almacen = new AlmacenJson(directorio);
 var servicio = new ServicioAcceso(almacen, TimeProvider.System,
     Environment.GetEnvironmentVariable("RASTREADOR_BASE_URL") ?? "http://localhost:5075");
+var servicioMetas = new ServicioMetas(almacen, servicio);
 
 if (args.Contains("send-mail", StringComparer.OrdinalIgnoreCase))
 {
@@ -31,6 +32,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.ConfigureHttpJsonOptions(opciones =>
     opciones.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddSingleton(servicio);
+builder.Services.AddSingleton(servicioMetas);
 builder.Logging.AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning);
 var app = builder.Build();
 
@@ -59,5 +61,6 @@ RutasSesion.Mapear(app);
 RutasContrasenas.Mapear(app);
 RutasAdministracion.Mapear(app);
 RutasPermisos.Mapear(app);
+RutasMetas.Mapear(app);
 
 app.Run();
