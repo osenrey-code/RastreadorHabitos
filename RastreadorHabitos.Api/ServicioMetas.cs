@@ -79,8 +79,6 @@ public sealed class ServicioMetas(AlmacenJson almacen, ServicioAcceso acceso)
         ValidarActor(estado, actor);
         var meta = estado.Metas.FirstOrDefault(item => item.Id == metaId)
             ?? throw new ErrorDeDominio(404, "Meta no encontrada.");
-        if (meta.UsuarioId != actor.Id)
-            throw new ErrorDeDominio(403, "No puede modificar metas de otro usuario.");
         return meta;
     }
 
