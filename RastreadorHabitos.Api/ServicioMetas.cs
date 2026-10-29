@@ -55,8 +55,6 @@ public sealed class ServicioMetas(AlmacenJson almacen, ServicioAcceso acceso)
     public MetaPublica Eliminar(UsuarioPublico actor, Guid metaId)
     {
         _ = almacen.Leer(estado => BuscarPropia(estado, actor, metaId));
-        if (!acceso.TienePermiso(actor.Id, PermisoEliminar))
-            throw new ErrorDeDominio(403, "Se requiere el permiso habitos.eliminar.");
 
         return almacen.Cambiar(estado =>
         {
