@@ -20,7 +20,8 @@ public static class TransicionesMeta
         (EstadoMeta.Pendiente, EstadoMeta.Activa),
         (EstadoMeta.Pendiente, EstadoMeta.Cancelada),
         (EstadoMeta.Activa, EstadoMeta.Completada),
-        (EstadoMeta.Activa, EstadoMeta.Cancelada)
+        (EstadoMeta.Activa, EstadoMeta.Cancelada),
+        (EstadoMeta.Completada, EstadoMeta.Activa)
     ];
 
     public static readonly (EstadoMeta Desde, EstadoMeta Hacia) ProhibidaExplicita =
